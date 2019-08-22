@@ -15,6 +15,9 @@ const store = async (req, res) => {
 };
 
 const show = (req, res) => {
+  if (!req.user) {
+    res.status(400).send('User is not defined');
+  }
   res.send(req.user);
 };
 
