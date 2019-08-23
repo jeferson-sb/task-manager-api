@@ -66,12 +66,14 @@ UserSchema.virtual('tasks', {
   foreignField: 'creator'
 });
 
+// Model methods
 UserSchema.methods.toJSON = function() {
   const userObject = this.toObject();
-  return pick(userObject, ['_id', 'email']);
+  return pick(userObject, ['_id', 'name', 'email']);
 };
 
 UserSchema.methods.generateAuthToken = async function() {
+  // Generate jwt token
   const token = jwt.sign({ _id: this._id.toString() }, process.env.JWT_SECRET);
 
   this.tokens = this.tokens.concat({ token });

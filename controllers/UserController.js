@@ -1,7 +1,13 @@
 const User = require('../models/User');
-const { pick } = require('../utils');
 
-const index = (req, res) => {};
+const index = async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.send(users);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+};
 
 const store = async (req, res) => {
   try {

@@ -16,6 +16,7 @@ const auth = require('../middleware/auth');
 //   }
 // });
 
+router.get('/', UserController.index);
 router.post('/', UserController.store);
 router
   .route('/me')
