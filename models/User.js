@@ -81,19 +81,6 @@ UserSchema.methods.generateAuthToken = async function() {
   return token;
 };
 
-// UserSchema.statics.findByToken = function(token) {
-//   try {
-//     var decoded = jwt.verify(token, process.env.JWT_SECRET);
-//   } catch (e) {
-//     return Promise.reject();
-//   }
-//   return this.findOne({
-//     _id: decoded._id,
-//     'tokens.token': token,
-//     'tokens.access': 'auth'
-//   });
-// };
-
 UserSchema.statics.findByCredentials = async function(email, password) {
   try {
     const user = await this.findOne({ email });
@@ -123,16 +110,5 @@ UserSchema.pre('remove', async function(next) {
   await Task.deleteMany({ creator: this._id });
   next();
 });
-
-// UserSchema.methods.removeToken = function(token) {
-//   const user = this;
-//   return user.update({
-//     $pull: {
-//       tokens: {
-//         token
-//       }
-//     }
-//   });
-// };
 
 module.exports = model('User', UserSchema);

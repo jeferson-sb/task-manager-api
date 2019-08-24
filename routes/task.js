@@ -14,10 +14,3 @@ router
   .delete(auth, TaskController.destroy);
 
 module.exports = router;
-
-// index, listar
-// create, retorna um item criado
-// store, salva
-// show, mostra um valor
-// update, atualiza
-// destroy, remove
