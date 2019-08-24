@@ -50,54 +50,55 @@ const store = async (req, res) => {
   }
 };
 
-const show = (req, res) => {
-  const id = req.params.id;
+const show = async (req, res) => {
+  const _id = req.params.id;
 
-  if (!ObjectID.isValid(id)) {
-    return res.status(400).send();
+  if (!ObjectID.isValid(_id)) {
+    return res.sendStatus(400);
   }
-  Task.findOne({ _id: id, _creator: req.user._id })
-    .then(task => {
-      if (!task) {
-        return res.status(404).send();
-      }
-      res.send({ todo });
-    })
-    .catch(err => res.status(400).send());
+
+  try {
+    const task = await Task.findOne({ _id, creator: req.user._id });
+    if (!task) {
+      return res.sendStatus(404);
+    }
+    res.send(task);
+  } catch (error) {}
 };
 
-const update = (req, res) => {
-  const id = req.params.id;
-  const body = pick(req.body, ['text', 'completed']);
+const update = async (req, res) => {
+  const _id = req.params.id;
+  const { text, completed } = pick(req.body, ['text', 'completed']);
 
-  if (!ObjectID.isValid(id)) {
-    return res.status(404).send();
+  if (!ObjectID.isValid(_id)) {
+    return res.sendStatus(404);
   }
 
-  if (isBoolean(body.completed) && body.completed) {
-    body.completedAt = new Date().getTime();
-  } else {
-    body.completed = false;
-    body.completedAt = null;
-  }
+  try {
+    let task = await Task.findOne({ _id, creator: req.user._id });
 
-  Task.findOneAndUpdate(
-    { _id: id, _creator: req.user._id },
-    { $set: body },
-    { new: true }
-  )
-    .then(task => {
-      if (!task) {
-        return res.sendStatus(404);
-      }
-      res.send({ task });
-    })
-    .catch(e => {
-      res.sendStatus(400);
-    });
+    if (!task) {
+      return res.sendStatus(404);
+    }
+
+    task['text'] = text;
+
+    if (isBoolean(completed) && completed === true) {
+      task['completed'] = completed;
+      task['completedAt'] = new Date().getTime();
+    } else {
+      task['completed'] = false;
+      task['completedAt'] = null;
+    }
+
+    await task.save();
+    res.send(task);
+  } catch (error) {
+    res.sendStatus(400);
+  }
 };
 
-const destroy = async () => {
+const destroy = async (req, res) => {
   try {
     const id = req.params.id;
     if (!ObjectID.isValid(id)) {
@@ -105,12 +106,12 @@ const destroy = async () => {
     }
     const task = await Task.findOneAndRemove({
       _id: id,
-      _creator: req.user._id
+      creator: req.user._id
     });
     if (!task) {
       return res.sendStatus(404);
     }
-    res.send({ task });
+    res.send(task);
   } catch (error) {
     res.sendStatus(400);
   }
