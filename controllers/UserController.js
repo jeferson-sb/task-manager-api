@@ -80,4 +80,23 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { index, store, show, destroy, update, login, logout };
+const logoutAll = async (req, res) => {
+  try {
+    req.user.tokens = [];
+    await req.user.save();
+    res.sendStatus(200);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+};
+
+module.exports = {
+  index,
+  store,
+  show,
+  destroy,
+  update,
+  login,
+  logout,
+  logoutAll
+};

@@ -69,7 +69,7 @@ UserSchema.virtual('tasks', {
 // Model methods
 UserSchema.methods.toJSON = function() {
   const userObject = this.toObject();
-  return pick(userObject, ['_id', 'name', 'email']);
+  return pick(userObject, ['_id', 'name', 'email', 'age']);
 };
 
 UserSchema.methods.generateAuthToken = async function() {

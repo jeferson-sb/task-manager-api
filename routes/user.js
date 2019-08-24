@@ -25,7 +25,8 @@ router
   .delete(auth, UserController.destroy);
 
 router.post('/login', UserController.login);
-router.delete('/logout', auth, UserController.logout);
+router.post('/logout', auth, UserController.logout);
+router.post('/logoutall', auth, UserController.logoutAll);
 
 // router
 //   .route('/me/avatar')
