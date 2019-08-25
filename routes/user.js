@@ -2,20 +2,6 @@ const router = require('express').Router();
 const UserController = require('../controllers/UserController');
 const auth = require('../middleware/auth');
 
-// const multer = require('multer');
-// const upload = multer({
-//   dest: 'images',
-//   limits: {
-//     fileSize: 100000
-//   },
-//   fileFilter(req, file, cb) {
-//     if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-//       return cb(new Error('File must be an image'));
-//     }
-//     cb(undefined, true);
-//   }
-// });
-
 router.get('/', UserController.index);
 router.post('/', UserController.store);
 router
@@ -28,23 +14,18 @@ router.post('/login', UserController.login);
 router.post('/logout', auth, UserController.logout);
 router.post('/logoutall', auth, UserController.logoutAll);
 
-// router
-//   .route('/me/avatar')
-//   .post(upload.single('avatar'), helpers.upload, (err, req, res, next) => {
-//     res.status(400).send({ err: err.message });
-//   })
-//   .delete(authenticate, async (req, res) => {
-//     try {
-//       req.user.avatar = undefined;
-//       await req.user.save();
-//       res.status(200).send();
-//     } catch (error) {
-//       res.status(400).send();
-//     }
-//   });
+router
+  .route('/me/avatar')
+  .post(
+    auth,
+    UserController.upload.single('avatar'),
+    UserController.storeAvatar,
+    (error, req, res, next) => {
+      res.status(400).send({ error: error.message });
+    }
+  )
+  .delete(auth, UserController.destroyAvatar);
 
-// router.route('/:id/avatar').post(upload.single('avatar'), helpers.upload);
-
-// router.route('/:id/avatar').get(helpers.getUserAvatar);
+router.get('/:id/avatar', UserController.showAvatar);
 
 module.exports = router;

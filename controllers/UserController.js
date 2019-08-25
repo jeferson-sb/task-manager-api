@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const multer = require('multer');
+const { sendWelcomeEmail, sendCancelationEmail } = require('../emails/account');
 
 const index = async (req, res) => {
   try {
@@ -13,6 +15,7 @@ const store = async (req, res) => {
   try {
     const user = new User(req.body);
     await user.save();
+    sendWelcomeEmail(user.email, user.name);
     const token = await user.generateAuthToken();
     res.status(201).send({ user, token });
   } catch (error) {
@@ -50,7 +53,7 @@ const update = async (req, res) => {
 const destroy = async (req, res) => {
   try {
     await req.user.remove();
-    // sendCancelationEmail(req.user.email, req.user.name);
+    sendCancelationEmail(req.user.email, req.user.name);
     res.send(req.user);
   } catch (error) {
     res.sendStatus(500);
@@ -90,6 +93,47 @@ const logoutAll = async (req, res) => {
   }
 };
 
+const upload = multer({
+  limits: {
+    fileSize: 100000
+  },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error('File must be an image'));
+    }
+    cb(undefined, true);
+  }
+});
+
+const storeAvatar = async (req, res) => {
+  const buffer = await sharp(req.file.buffer)
+    .resize({ width: 250, height: 250 })
+    .png()
+    .toBuffer();
+  req.user.avatar = buffer;
+  await req.user.save();
+  res.send();
+};
+
+const destroyAvatar = async (req, res) => {
+  req.user.avatar = undefined;
+  await req.user.save();
+  res.end();
+};
+
+const showAvatar = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user || !user.avatar) throw new Error();
+
+    res.type('image/png');
+    res.send(user.avatar);
+  } catch (error) {
+    res.sendStatus(404);
+  }
+};
+
 module.exports = {
   index,
   store,
@@ -98,5 +142,9 @@ module.exports = {
   update,
   login,
   logout,
-  logoutAll
+  logoutAll,
+  upload,
+  storeAvatar,
+  showAvatar,
+  destroyAvatar
 };
