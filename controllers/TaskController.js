@@ -2,34 +2,35 @@ const Task = require('../models/Task');
 const { ObjectID } = require('mongodb');
 const { pick, isBoolean } = require('../utils');
 
+// GET /tasks?completed=true
+// GET /tasks?limit=10&skip=20
+// GET /tasks?sortBy=createdAt:desc
 const index = async (req, res) => {
-  // const match = {};
-  // match._creator = req.user._id;
+  const match = {};
+  const sort = {};
+  const { completed, sortBy, limit, skip } = req.query;
 
-  // // GET /todos?completed=true
-  // if (req.query.completed) {
-  //   match.completed = req.query.completed === 'true';
-  // }
-  // // GET /todos?limit=2
-  // if (req.query.limit) {
-  //   let limit = parseInt(req.query.limit);
-  //   Task.find(match)
-  //     .limit(limit)
-  //     .then(tasks => res.send({ tasks }), err => res.status(400).send(err));
-  // }
+  if (completed) {
+    match.completed = completed === 'true';
+  }
 
-  // GET /todos?limit=10&skip=3
-  // if (req.query.skip && req.query.limit) {
-  //   let limit = parseInt(req.query.limit);
-  //   let skip = parseInt(req.query.skip);
-  //   match.skip = skip;
-  //   Task.find(match)
-  //     .limit(limit)
-  //     .then(tasks => res.send({ tasks }), err => res.status(400).send(err));
-  // }
+  if (sortBy) {
+    const parts = sortBy.split(':');
+    sort[parts[0]] = parts[1] === 'desc' ? -1 : 1;
+  }
 
   try {
-    await req.user.populate('tasks').execPopulate();
+    await req.user
+      .populate({
+        path: 'tasks',
+        match,
+        options: {
+          limit: parseInt(limit),
+          skip: parseInt(skip),
+          sort
+        }
+      })
+      .execPopulate();
     res.send(req.user.tasks);
   } catch (error) {
     res.sendStatus(500);
@@ -39,7 +40,7 @@ const index = async (req, res) => {
 const store = async (req, res) => {
   try {
     const task = new Task({
-      text: req.body.text,
+      ...req.body,
       creator: req.user._id
     });
 
@@ -68,9 +69,13 @@ const show = async (req, res) => {
 
 const update = async (req, res) => {
   const _id = req.params.id;
-  const { text, completed } = pick(req.body, ['text', 'completed']);
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ['text', 'completed'];
+  const isValidOperation = updates.every(update =>
+    allowedUpdates.includes(update)
+  );
 
-  if (!ObjectID.isValid(_id)) {
+  if (!ObjectID.isValid(_id) || !isValidOperation) {
     return res.sendStatus(404);
   }
 
@@ -81,20 +86,20 @@ const update = async (req, res) => {
       return res.sendStatus(404);
     }
 
-    task['text'] = text;
-
-    if (isBoolean(completed) && completed === true) {
-      task['completed'] = completed;
-      task['completedAt'] = new Date().getTime();
-    } else {
-      task['completed'] = false;
-      task['completedAt'] = null;
-    }
+    updates.forEach(update => {
+      task[update] = req.body[update];
+      if (update === 'completed' && req.body[update]) {
+        task['completedAt'] = new Date().getTime();
+      } else {
+        task['completedAt'] = null;
+      }
+    });
 
     await task.save();
     res.send(task);
-  } catch (error) {
-    res.sendStatus(400);
+  } catch (e) {
+    res.status(400).send(e);
+    console.log(e);
   }
 };
 
