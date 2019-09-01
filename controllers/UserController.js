@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const multer = require('multer');
+const sharp = require('sharp');
 const { sendWelcomeEmail, sendCancelationEmail } = require('../emails/account');
 
 const index = async (req, res) => {
